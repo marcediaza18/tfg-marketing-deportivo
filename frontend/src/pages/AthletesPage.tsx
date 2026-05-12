@@ -10,10 +10,18 @@ import {
   Typography,
   Alert,
   CircularProgress,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { listAthletes, Athlete } from '../api/athletes';
+import { listAthletes, deleteAthlete, Athlete } from '../api/athletes';
+import { useHasRole } from '../hooks/useRole';
+import { AthleteFormDialog } from '../components/AthleteFormDialog';
+import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
+import { apiError, formatEUR } from '../utils/format';
 
 const STATUS_COLOR: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info'> = {
   prospecto: 'default',
@@ -28,14 +36,21 @@ export function AthletesPage() {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Athlete | null>(null);
+  const [deleting, setDeleting] = useState<Athlete | null>(null);
+  const [deletingBusy, setDeletingBusy] = useState(false);
 
-  async function refresh() {
+  const canWrite = useHasRole('ojeador', 'direccion');
+  const canDelete = useHasRole('direccion');
+
+  async function refresh(): Promise<void> {
     setLoading(true);
     try {
       const data = await listAthletes(q ? { q } : undefined);
       setRows(data.items);
     } catch (err) {
-      setError((err as Error).message ?? 'Error al cargar deportistas');
+      setError(apiError(err));
     } finally {
       setLoading(false);
     }
@@ -45,6 +60,20 @@ export function AthletesPage() {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function handleDelete(): Promise<void> {
+    if (!deleting) return;
+    setDeletingBusy(true);
+    try {
+      await deleteAthlete(deleting._id);
+      setDeleting(null);
+      await refresh();
+    } catch (err) {
+      setError(apiError(err));
+    } finally {
+      setDeletingBusy(false);
+    }
+  }
 
   const columns: GridColDef[] = [
     { field: 'fullName', headerName: 'Nombre', flex: 1.5, minWidth: 180 },
@@ -57,8 +86,7 @@ export function AthletesPage() {
       flex: 0.8,
       minWidth: 130,
       type: 'number',
-      valueFormatter: (value: number | undefined) =>
-        value != null ? new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value) : '—',
+      valueFormatter: (value: number | undefined) => formatEUR(value),
     },
     {
       field: 'status',
@@ -73,15 +101,46 @@ export function AthletesPage() {
         />
       ),
     },
+    {
+      field: 'actions',
+      headerName: '',
+      width: 100,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          {canWrite && (
+            <Tooltip title="Editar">
+              <IconButton size="small" onClick={() => { setEditing(params.row); setFormOpen(true); }}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {canDelete && (
+            <Tooltip title="Eliminar">
+              <IconButton size="small" color="error" onClick={() => setDeleting(params.row)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      ),
+    },
   ];
 
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="h4">Deportistas</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} disabled>
-          Nuevo deportista
-        </Button>
+        {canWrite && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => { setEditing(null); setFormOpen(true); }}
+          >
+            Nuevo deportista
+          </Button>
+        )}
       </Stack>
 
       <Card sx={{ mb: 2 }}>
@@ -91,18 +150,15 @@ export function AthletesPage() {
               label="Buscar (nombre, club, notas)"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              size="small"
-              fullWidth
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') refresh();
-              }}
+              size="small" fullWidth
+              onKeyDown={(e) => { if (e.key === 'Enter') refresh(); }}
             />
             <Button variant="outlined" onClick={refresh}>Buscar</Button>
           </Stack>
         </CardContent>
       </Card>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       <Card>
         <CardContent>
@@ -123,6 +179,20 @@ export function AthletesPage() {
           )}
         </CardContent>
       </Card>
+
+      <AthleteFormDialog
+        open={formOpen}
+        initial={editing}
+        onClose={() => setFormOpen(false)}
+        onSaved={refresh}
+      />
+      <ConfirmDeleteDialog
+        open={!!deleting}
+        itemLabel={deleting?.fullName ?? ''}
+        onCancel={() => setDeleting(null)}
+        onConfirm={handleDelete}
+        loading={deletingBusy}
+      />
     </Box>
   );
 }

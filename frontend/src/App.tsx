@@ -4,7 +4,11 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AthletesPage } from './pages/AthletesPage';
-import { Placeholder } from './pages/Placeholder';
+import { ClientsPage } from './pages/ClientsPage';
+import { ProductsPage } from './pages/ProductsPage';
+import { EventsPage } from './pages/EventsPage';
+import { SponsorshipsPage } from './pages/SponsorshipsPage';
+import { ScoutingPage } from './pages/ScoutingPage';
 
 export default function App() {
   return (
@@ -15,11 +19,11 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/athletes" element={<AthletesPage />} />
-          <Route path="/scouting" element={<Placeholder title="Rutas de captación" />} />
-          <Route path="/clients" element={<Placeholder title="Clientes" />} />
-          <Route path="/products" element={<Placeholder title="Productos y servicios" />} />
-          <Route path="/events" element={<Placeholder title="Eventos" />} />
-          <Route path="/sponsorships" element={<Placeholder title="Patrocinios" />} />
+          <Route path="/scouting" element={<ScoutingPage />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/sponsorships" element={<SponsorshipsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
