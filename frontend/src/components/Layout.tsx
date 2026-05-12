@@ -12,8 +12,11 @@ import {
   Tooltip,
   Avatar,
   Chip,
+  Divider,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import MapIcon from '@mui/icons-material/Map';
+import RouteIcon from '@mui/icons-material/Route';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import GroupIcon from '@mui/icons-material/Group';
 import InventoryIcon from '@mui/icons-material/Inventory2';
@@ -26,14 +29,31 @@ import { useAuth } from '../contexts/AuthContext';
 
 const DRAWER_WIDTH = 240;
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-  { path: '/athletes', label: 'Deportistas', icon: <SportsSoccerIcon /> },
-  { path: '/scouting', label: 'Rutas de captación', icon: <TravelExploreIcon /> },
-  { path: '/clients', label: 'Clientes', icon: <GroupIcon /> },
-  { path: '/products', label: 'Productos y servicios', icon: <InventoryIcon /> },
-  { path: '/events', label: 'Eventos', icon: <EventIcon /> },
-  { path: '/sponsorships', label: 'Patrocinios', icon: <HandshakeIcon /> },
+const navSections = [
+  {
+    title: 'Análisis',
+    items: [
+      { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
+      { path: '/map', label: 'Mapa de tours', icon: <MapIcon /> },
+    ],
+  },
+  {
+    title: 'Scouting',
+    items: [
+      { path: '/tours', label: 'Tours de scouting', icon: <RouteIcon /> },
+      { path: '/athletes', label: 'Deportistas', icon: <SportsSoccerIcon /> },
+      { path: '/scouting', label: 'Rutas 1-a-1', icon: <TravelExploreIcon /> },
+    ],
+  },
+  {
+    title: 'Negocio',
+    items: [
+      { path: '/clients', label: 'Clientes', icon: <GroupIcon /> },
+      { path: '/products', label: 'Productos y servicios', icon: <InventoryIcon /> },
+      { path: '/events', label: 'Eventos', icon: <EventIcon /> },
+      { path: '/sponsorships', label: 'Patrocinios', icon: <HandshakeIcon /> },
+    ],
+  },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -88,18 +108,26 @@ export function Layout() {
       >
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
-          <List>
-            {navItems.map((item) => (
-              <ListItemButton
-                key={item.path}
-                selected={location.pathname.startsWith(item.path)}
-                onClick={() => navigate(item.path)}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            ))}
-          </List>
+          {navSections.map((section, idx) => (
+            <Box key={section.title}>
+              {idx > 0 && <Divider sx={{ my: 1 }} />}
+              <Typography variant="overline" sx={{ pl: 2, color: 'text.secondary' }}>
+                {section.title}
+              </Typography>
+              <List dense>
+                {section.items.map((item) => (
+                  <ListItemButton
+                    key={item.path}
+                    selected={location.pathname.startsWith(item.path)}
+                    onClick={() => navigate(item.path)}
+                  >
+                    <ListItemIcon>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.label} />
+                  </ListItemButton>
+                ))}
+              </List>
+            </Box>
+          ))}
         </Box>
       </Drawer>
 

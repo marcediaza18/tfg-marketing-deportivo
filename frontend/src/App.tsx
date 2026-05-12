@@ -3,6 +3,8 @@ import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { MapPage } from './pages/MapPage';
+import { ToursPage } from './pages/ToursPage';
 import { AthletesPage } from './pages/AthletesPage';
 import { ClientsPage } from './pages/ClientsPage';
 import { ProductsPage } from './pages/ProductsPage';
@@ -18,6 +20,8 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/tours" element={<ToursPage />} />
           <Route path="/athletes" element={<AthletesPage />} />
           <Route path="/scouting" element={<ScoutingPage />} />
           <Route path="/clients" element={<ClientsPage />} />

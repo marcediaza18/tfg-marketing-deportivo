@@ -15,6 +15,9 @@ export interface IAthlete extends Document {
   status: AthleteStatus;
   tags: string[];
   notes?: string;
+  discoveredAtTour?: Types.ObjectId;     // tour donde se descubrió al niño
+  discoveredAtStopIdx?: number;          // índice de la parada dentro del tour
+  averageRating?: number;                // rating medio agregado (1-10), calculado externamente
   createdBy: Types.ObjectId;  // ojeador que lo registró
   createdAt: Date;
   updatedAt: Date;
@@ -39,6 +42,9 @@ const athleteSchema = new Schema<IAthlete>(
     },
     tags: { type: [String], default: [] },
     notes: String,
+    discoveredAtTour: { type: Schema.Types.ObjectId, ref: 'Tour', index: true },
+    discoveredAtStopIdx: { type: Number, min: 0 },
+    averageRating: { type: Number, min: 0, max: 10 },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true }

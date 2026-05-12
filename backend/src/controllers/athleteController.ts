@@ -16,19 +16,24 @@ const baseSchema = z.object({
   status: z.enum(['prospecto', 'en_seguimiento', 'contactado', 'firmado', 'descartado']).optional(),
   tags: z.array(z.string()).optional(),
   notes: z.string().optional(),
+  discoveredAtTour: z.string().optional(),
+  discoveredAtStopIdx: z.number().int().nonnegative().optional(),
+  averageRating: z.number().min(0).max(10).optional(),
 });
 
 export async function list(req: Request, res: Response): Promise<void> {
-  const { q, status, position, club, limit = '50', skip = '0' } = req.query;
+  const { q, status, position, club, tour, limit = '50', skip = '0' } = req.query;
   const filter: Record<string, unknown> = {};
   if (status) filter.status = status;
   if (position) filter.position = position;
   if (club) filter.currentClub = club;
+  if (tour && Types.ObjectId.isValid(String(tour))) filter.discoveredAtTour = tour;
   if (q) filter.$text = { $search: String(q) };
   const items = await Athlete.find(filter)
+    .populate('discoveredAtTour', 'name')
     .sort({ createdAt: -1 })
     .skip(parseInt(String(skip), 10))
-    .limit(Math.min(parseInt(String(limit), 10), 200));
+    .limit(Math.min(parseInt(String(limit), 10), 500));
   const total = await Athlete.countDocuments(filter);
   res.json({ items, total });
 }

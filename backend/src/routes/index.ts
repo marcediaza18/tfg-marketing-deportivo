@@ -9,6 +9,7 @@ import * as products from '../controllers/productController';
 import * as events from '../controllers/eventController';
 import * as sponsorships from '../controllers/sponsorshipController';
 import * as scouting from '../controllers/scoutingController';
+import * as tours from '../controllers/tourController';
 import * as dashboard from '../controllers/dashboardController';
 
 const router = Router();
@@ -58,6 +59,13 @@ router.put('/scouting/:id', requireAuth, requireRole('ojeador', 'direccion'), sc
 router.post('/scouting/:id/stages', requireAuth, requireRole('ojeador', 'direccion'), scouting.addStage);
 router.delete('/scouting/:id', requireAuth, requireRole('direccion'), scouting.remove);
 
+// Tours — ojeador y dirección crean/editan; dirección borra
+router.get('/tours', requireAuth, tours.list);
+router.get('/tours/:id', requireAuth, tours.get);
+router.post('/tours', requireAuth, requireRole('ojeador', 'direccion'), tours.create);
+router.put('/tours/:id', requireAuth, requireRole('ojeador', 'direccion'), tours.update);
+router.delete('/tours/:id', requireAuth, requireRole('direccion'), tours.remove);
+
 // Dashboard analytics — todos los autenticados, pensado especialmente para dirección
 router.get('/dashboard/summary', requireAuth, dashboard.summary);
 router.get('/dashboard/athletes-by-status', requireAuth, dashboard.athletesByStatus);
@@ -65,5 +73,6 @@ router.get('/dashboard/athletes-by-position', requireAuth, dashboard.athletesByP
 router.get('/dashboard/sponsorships-by-month', requireAuth, dashboard.sponsorshipsByMonth);
 router.get('/dashboard/products-by-category', requireAuth, dashboard.productsByCategory);
 router.get('/dashboard/scouting-funnel', requireAuth, dashboard.scoutingFunnel);
+router.get('/dashboard/tour-performance', requireAuth, dashboard.tourPerformance);
 
 export default router;
