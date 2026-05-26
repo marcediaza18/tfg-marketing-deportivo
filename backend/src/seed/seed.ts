@@ -28,6 +28,20 @@ import { Tour } from '../models/Tour';
 const POSITIONS = ['portero', 'lateral_derecho', 'lateral_izquierdo', 'central', 'mediocentro_defensivo', 'mediocentro', 'mediocentro_ofensivo', 'extremo_derecho', 'extremo_izquierdo', 'delantero'];
 const FIRST_NAMES_KID = ['Liam', 'Noah', 'Mateo', 'Lucas', 'Sebastián', 'Diego', 'Adrián', 'Daniel', 'Carlos', 'Marco', 'Ethan', 'Logan', 'Aiden', 'Carter', 'Jackson', 'Mason', 'Owen', 'Hugo', 'Pablo', 'Iván', 'Jaden', 'Aaron', 'Caleb', 'Tyler'];
 const LAST_NAMES = ['García', 'Martínez', 'López', 'Rodríguez', 'Pérez', 'González', 'Sánchez', 'Fernández', 'Ramírez', 'Torres', 'Flores', 'Rivera', 'Gómez', 'Cruz', 'Reyes', 'Morales', 'Ortiz', 'Vargas', 'Castro'];
+const GUARDIAN_FIRST = ['Carmen', 'María', 'Patricia', 'José', 'Juan', 'Antonio', 'Luis', 'Sandra', 'Elena', 'Beatriz', 'Sarah', 'Michael', 'Jennifer', 'David', 'Linda'];
+const GUARDIAN_RELATIONS = ['madre', 'padre', 'madre', 'padre', 'tía', 'tío', 'abuela'];
+const LANGUAGES_POOL_USA = ['inglés', 'español', 'francés', 'portugués'];
+const LANGUAGES_POOL_ES = ['español', 'inglés', 'francés', 'catalán', 'gallego'];
+const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
+const ALLERGIES_POOL = ['polen', 'frutos secos', 'lactosa', 'gluten', 'penicilina', 'picaduras'];
+const EDUCATION_LEVELS = ['primaria', 'secundaria', 'bachillerato', 'fp'] as const;
+const INJURIES_TEMPLATES = [
+  'Sin lesiones relevantes en los últimos 24 meses.',
+  'Esguince leve de tobillo derecho hace 8 meses, recuperado completamente.',
+  'Sobrecarga muscular en isquiotibiales (2024), tratamiento conservador.',
+  'Fractura de clavícula a los 11 años, sin secuelas.',
+  'Tendinitis rotuliana ocasional, controlada con fisioterapia preventiva.',
+];
 
 function randomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -203,22 +217,77 @@ async function seedKidsForTours(tours: Awaited<ReturnType<typeof seedTours>>, sc
     const kids = [];
     for (let i = 0; i < seed.kidsCount; i++) {
       const stopIdx = randomInt(0, doc.stops.length - 1);
+      const stop = doc.stops[stopIdx];
+      const isUSA = stop.country === 'USA';
       // distribuye rating alrededor del objetivo con ruido gaussiano simple
       const ratingNoise = (Math.random() + Math.random() + Math.random()) / 3 - 0.5;
       const rating = Math.max(1, Math.min(10, seed.avgRatingTarget + ratingNoise * 3));
+      const status: 'prospecto' | 'en_seguimiento' | 'contactado' | 'firmado' =
+        rating >= 8 ? 'firmado' : rating >= 6.5 ? 'contactado' : rating >= 5 ? 'en_seguimiento' : 'prospecto';
+
+      const firstName = randomItem(FIRST_NAMES_KID);
+      const last1 = randomItem(LAST_NAMES);
+      const last2 = randomItem(LAST_NAMES);
+      const slug = `${firstName}.${last1}`.toLowerCase().replace(/[^a-z.]/g, '');
+      const birthYear = randomInt(2009, 2013); // 12-16 años en 2025
+      const ageGroup = 2025 - birthYear <= 14 ? 'sub15' : 'sub17';
+      const guardianFirst = randomItem(GUARDIAN_FIRST);
+      const guardianRelation = randomItem(GUARDIAN_RELATIONS);
+
+      // Métricas correlacionadas con rating (mejor rating = mejor sprint, mejor cooper)
+      const sprint = 6.5 - (rating - 5) * 0.15 + (Math.random() - 0.5) * 0.4;
+      const cooper = 2.3 + (rating - 5) * 0.18 + (Math.random() - 0.5) * 0.3;
+
       kids.push({
-        fullName: `${randomItem(FIRST_NAMES_KID)} ${randomItem(LAST_NAMES)} ${randomItem(LAST_NAMES)}`,
-        birthDate: randomDate(new Date(2008, 0, 1), new Date(2013, 0, 1)), // 12-17 años en 2025
-        nationality: doc.stops[stopIdx].country === 'USA' ? randomItem(['USA', 'México', 'Brasil', 'Argentina']) : 'España',
-        position: randomItem(POSITIONS),
-        preferredFoot: randomItem(['izquierdo', 'derecho', 'ambidiestro'] as const),
+        fullName: `${firstName} ${last1} ${last2}`,
+        birthDate: new Date(birthYear, randomInt(0, 11), randomInt(1, 28)),
+        nationality: isUSA ? randomItem(['USA', 'México', 'Brasil', 'Argentina']) : 'España',
+        documentId: isUSA ? `US${randomInt(10000000, 99999999)}` : `${randomInt(10000000, 99999999)}${'TRWAGMYFPDXBNJZSQVHLCKE'[randomInt(0, 22)]}`,
+        photoUrl: `https://i.pravatar.cc/200?u=${slug}${i}`,
+
+        email: status !== 'prospecto' ? `${slug}${i}@example.com` : undefined,
+        phone: status === 'firmado' || status === 'contactado' ? `+1 555-${randomInt(1000, 9999)}` : undefined,
+        addressCity: stop.city,
+        addressCountry: stop.country,
+        languages: isUSA ? randomSample(LANGUAGES_POOL_USA, randomInt(1, 2)) : randomSample(LANGUAGES_POOL_ES, randomInt(1, 3)),
+
+        guardianName: `${guardianFirst} ${last1}`,
+        guardianRelation,
+        guardianPhone: `+${isUSA ? '1' : '34'} ${randomInt(600, 999)} ${randomInt(100, 999)} ${randomInt(100, 999)}`,
+        guardianEmail: `${guardianFirst.toLowerCase()}.${last1.toLowerCase()}@example.com`,
+
+        educationLevel: randomItem([...EDUCATION_LEVELS]),
+        schoolName: `${stop.city} ${randomItem(['Middle School', 'High School', 'Academy', 'Sports Academy'])}`,
+
         heightCm: randomInt(150, 185),
         weightKg: randomInt(45, 75),
-        currentClub: `${doc.stops[stopIdx].city} Youth Academy`,
-        marketValueEUR: 0,           // sin valor de mercado para niños
-        status: rating >= 8 ? 'firmado' : rating >= 6.5 ? 'contactado' : rating >= 5 ? 'en_seguimiento' : 'prospecto',
-        tags: ['niño', `sub${Math.random() < 0.5 ? '15' : '17'}`],
-        notes: `Descubierto en ${doc.stops[stopIdx].tournamentName} (${doc.stops[stopIdx].city}).`,
+        preferredFoot: randomItem(['izquierdo', 'derecho', 'ambidiestro'] as const),
+
+        position: randomItem(POSITIONS),
+        secondaryPositions: Math.random() < 0.6 ? [randomItem(POSITIONS)] : [],
+        yearsPlaying: randomInt(3, 10),
+        currentClub: `${stop.city} Youth Academy`,
+        jerseyNumber: randomInt(1, 30),
+        isCaptain: Math.random() < 0.15,
+        matchesPlayed: randomInt(15, 60),
+        goalsScored: randomInt(0, 30),
+        assists: randomInt(0, 20),
+        sprint40mSeconds: Math.round(sprint * 100) / 100,
+        cooperTestKm: Math.round(cooper * 100) / 100,
+
+        bloodType: randomItem([...BLOOD_TYPES]),
+        allergies: Math.random() < 0.3 ? randomSample(ALLERGIES_POOL, randomInt(1, 2)) : [],
+        injuries: randomItem(INJURIES_TEMPLATES),
+        lastMedicalCheckDate: randomDate(new Date(2024, 0, 1), new Date(2025, 6, 1)),
+
+        marketValueEUR: 0,
+        signedAt: status === 'firmado' ? randomDate(new Date(2024, 6, 1), new Date(2025, 8, 1)) : undefined,
+        contractEndsAt: status === 'firmado' ? randomDate(new Date(2026, 0, 1), new Date(2028, 11, 31)) : undefined,
+        agreedFeeEUR: status === 'firmado' ? randomInt(2000, 15000) : undefined,
+
+        status,
+        tags: ['niño', ageGroup],
+        notes: `Descubierto en ${stop.tournamentName} (${stop.city}).`,
         discoveredAtTour: doc._id,
         discoveredAtStopIdx: stopIdx,
         averageRating: Math.round(rating * 10) / 10,
@@ -231,6 +300,16 @@ async function seedKidsForTours(tours: Awaited<ReturnType<typeof seedTours>>, sc
   const totalKids = allKids.reduce((acc, t) => acc + t.kids.length, 0);
   console.log(`[seed] ${totalKids} niños descubiertos en tours`);
   return allKids;
+}
+
+function randomSample<T>(arr: T[], n: number): T[] {
+  const copy = [...arr];
+  const out: T[] = [];
+  for (let i = 0; i < n && copy.length > 0; i++) {
+    const idx = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(idx, 1)[0]);
+  }
+  return out;
 }
 
 async function seedClients() {

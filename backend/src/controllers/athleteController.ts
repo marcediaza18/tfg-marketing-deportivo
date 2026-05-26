@@ -7,12 +7,49 @@ const baseSchema = z.object({
   fullName: z.string().min(2),
   birthDate: z.coerce.date().optional(),
   nationality: z.string().optional(),
-  position: z.string().optional(),
-  preferredFoot: z.enum(['izquierdo', 'derecho', 'ambidiestro']).optional(),
+  documentId: z.string().optional(),
+  photoUrl: z.string().url().optional().or(z.literal('')),
+
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional(),
+  addressCity: z.string().optional(),
+  addressCountry: z.string().optional(),
+  languages: z.array(z.string()).optional(),
+
+  guardianName: z.string().optional(),
+  guardianRelation: z.string().optional(),
+  guardianPhone: z.string().optional(),
+  guardianEmail: z.string().email().optional().or(z.literal('')),
+
+  educationLevel: z.enum(['primaria', 'secundaria', 'bachillerato', 'fp', 'universitario', 'otro']).optional(),
+  schoolName: z.string().optional(),
+
   heightCm: z.number().int().positive().optional(),
   weightKg: z.number().positive().optional(),
+  preferredFoot: z.enum(['izquierdo', 'derecho', 'ambidiestro']).optional(),
+
+  position: z.string().optional(),
+  secondaryPositions: z.array(z.string()).optional(),
+  yearsPlaying: z.number().int().nonnegative().optional(),
   currentClub: z.string().optional(),
+  jerseyNumber: z.number().int().min(1).max(99).optional(),
+  isCaptain: z.boolean().optional(),
+  matchesPlayed: z.number().int().nonnegative().optional(),
+  goalsScored: z.number().int().nonnegative().optional(),
+  assists: z.number().int().nonnegative().optional(),
+  sprint40mSeconds: z.number().nonnegative().optional(),
+  cooperTestKm: z.number().nonnegative().optional(),
+
+  bloodType: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).optional(),
+  allergies: z.array(z.string()).optional(),
+  injuries: z.string().optional(),
+  lastMedicalCheckDate: z.coerce.date().optional(),
+
   marketValueEUR: z.number().nonnegative().optional(),
+  signedAt: z.coerce.date().optional(),
+  contractEndsAt: z.coerce.date().optional(),
+  agreedFeeEUR: z.number().nonnegative().optional(),
+
   status: z.enum(['prospecto', 'en_seguimiento', 'contactado', 'firmado', 'descartado']).optional(),
   tags: z.array(z.string()).optional(),
   notes: z.string().optional(),
@@ -43,7 +80,7 @@ export async function get(req: Request, res: Response): Promise<void> {
     res.status(400).json({ error: 'ID inválido' });
     return;
   }
-  const item = await Athlete.findById(req.params.id);
+  const item = await Athlete.findById(req.params.id).populate('discoveredAtTour', 'name stops');
   if (!item) {
     res.status(404).json({ error: 'Deportista no encontrado' });
     return;
