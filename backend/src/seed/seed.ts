@@ -243,7 +243,6 @@ async function seedKidsForTours(tours: Awaited<ReturnType<typeof seedTours>>, sc
         birthDate: new Date(birthYear, randomInt(0, 11), randomInt(1, 28)),
         nationality: isUSA ? randomItem(['USA', 'México', 'Brasil', 'Argentina']) : 'España',
         documentId: isUSA ? `US${randomInt(10000000, 99999999)}` : `${randomInt(10000000, 99999999)}${'TRWAGMYFPDXBNJZSQVHLCKE'[randomInt(0, 22)]}`,
-        photoUrl: `https://i.pravatar.cc/200?u=${slug}${i}`,
 
         email: status !== 'prospecto' ? `${slug}${i}@example.com` : undefined,
         phone: status === 'firmado' || status === 'contactado' ? `+1 555-${randomInt(1000, 9999)}` : undefined,
